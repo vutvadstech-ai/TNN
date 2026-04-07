@@ -36,8 +36,6 @@ box-shadow:0 8px 20px rgba(0,0,0,0.15);
 margin-bottom:20px;
 }
 
-/* input */
-
 input{
 width:65px;
 padding:6px;
@@ -97,8 +95,6 @@ height:110px;
 width:110px;
 }
 
-/* leaderboard */
-
 .player{
 display:flex;
 align-items:center;
@@ -114,7 +110,7 @@ background:#f7f7f7;
 .score{width:80px;text-align:right;font-weight:bold}
 .actions{width:120px;text-align:right}
 
-/* popup edit */
+/* edit modal */
 
 #editModal{
 position:fixed;
@@ -141,7 +137,7 @@ width:70px;
 margin:5px;
 }
 
-/* loading popup */
+/* loading */
 
 #loadingBox{
 position:fixed;
@@ -206,19 +202,19 @@ Tên
 
 </div>
 
-<!-- EDIT POPUP -->
+<!-- edit popup -->
 
 <div id="editModal">
 <div class="modalContent">
 
 <h3>✏️ Sửa dữ liệu</h3>
 
-🌿 <input id="e_leaf" type="number"><br>
-🌸 <input id="e_flower" type="number"><br>
-🍇 <input id="e_fruit" type="number"><br>
-🌳 <input id="e_tree" type="number"><br>
-📖 <input id="e_book" type="number"><br>
-🗺️ <input id="e_map" type="number"><br>
+🌿 <input id="e_leaf"><br>
+🌸 <input id="e_flower"><br>
+🍇 <input id="e_fruit"><br>
+🌳 <input id="e_tree"><br>
+📖 <input id="e_book"><br>
+🗺️ <input id="e_map"><br>
 
 <br>
 
@@ -228,23 +224,18 @@ Tên
 </div>
 </div>
 
-<!-- LOADING -->
+<!-- loading -->
 
 <div id="loadingBox">
 <div class="loadingContent">
-
-💾 Đang lưu dữ liệu lên Drive...
-
-<br><br>
-
+💾 Đang lưu dữ liệu lên Drive...<br><br>
 ⏳ <span id="timer">10</span>s
-
 </div>
 </div>
 
 <script>
 
-const API_URL="PUT_YOUR_SCRIPT_URL_HERE"
+const API_URL="PASTE_SCRIPT_URL_HERE"
 
 let players=[]
 let scoreChart=null
@@ -287,9 +278,7 @@ if(t<=0) clearInterval(interval)
 }
 
 function hideLoading(){
-
 document.getElementById("loadingBox").style.display="none"
-
 }
 
 /* drive */
@@ -312,14 +301,18 @@ render()
 
 async function saveDrive(){
 
-await fetch(API_URL,{
+let res=await fetch(API_URL,{
 method:"POST",
 body:JSON.stringify(players)
 })
 
+let newData=await res.json()
+
+players=newData
+
 }
 
-/* player */
+/* add */
 
 function addPlayer(){
 
@@ -361,6 +354,8 @@ saveDrive()
 
 }
 
+/* edit */
+
 function openEdit(i){
 
 editIndex=i
@@ -379,9 +374,7 @@ editModal.style.display="flex"
 }
 
 function closeEdit(){
-
 editModal.style.display="none"
-
 }
 
 async function saveEdit(){
@@ -408,11 +401,14 @@ await saveDrive()
 setTimeout(async()=>{
 
 await loadDrive()
+
 hideLoading()
 
 },10000)
 
 }
+
+/* delete */
 
 function deletePlayer(i){
 
