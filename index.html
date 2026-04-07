@@ -1,22 +1,21 @@
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
 <meta charset="UTF-8">
-<title>BẢNG XẾP HẠNG</title>
+<title>BẢNG XẾP HẠNG NTĐ</title>
 
 <style>
-
 body{
 margin:0;
-font-family:Arial;
+font-family:"Times New Roman";
 background:linear-gradient(135deg,#a8edea,#fed6e3);
 }
 
 h1{
 text-align:center;
-padding:20px;
+font-size:40px;
 color:#ff2e63;
+margin:20px;
 }
 
 .container{
@@ -27,16 +26,15 @@ padding:20px;
 
 .card{
 background:white;
-border-radius:20px;
 padding:15px;
+border-radius:20px;
+box-shadow:0 5px 15px rgba(0,0,0,0.2);
 margin-bottom:20px;
-box-shadow:0 5px 15px rgba(0,0,0,0.15);
 }
 
 input{
 width:60px;
 padding:6px;
-margin:5px;
 border-radius:8px;
 border:1px solid #ddd;
 }
@@ -45,39 +43,52 @@ button{
 padding:8px 12px;
 border-radius:8px;
 border:none;
-margin:3px;
 cursor:pointer;
 }
 
-.addBtn{background:#4CAF50;color:white;}
-.editBtn{background:orange;}
-.deleteBtn{background:red;color:white;}
+.addBtn{background:#4CAF50;color:white}
+.editBtn{background:orange}
+.deleteBtn{background:red;color:white}
 
 .player{
 display:flex;
 align-items:center;
-padding:10px;
-border-radius:12px;
-margin-bottom:8px;
+padding:12px;
+margin-bottom:10px;
+border-radius:15px;
 background:#f9f9f9;
 }
 
-.rank{width:40px;font-weight:bold;}
-.name{flex:1;}
-.icons{flex:2;}
-.score{width:80px;text-align:right;}
-.actions{width:110px;text-align:right;}
+.rank{width:50px;font-weight:bold}
+.name{flex:1}
+.icons{flex:2}
+.score{width:100px;text-align:right;font-weight:bold}
+.actions{width:120px;text-align:right}
 
-.top1{background:linear-gradient(45deg,gold,orange)}
-.top2{background:linear-gradient(45deg,silver,#ddd)}
-.top3{background:linear-gradient(45deg,#cd7f32,#e0a96d)}
+.top1{
+background:linear-gradient(45deg,gold,orange);
+box-shadow:0 0 20px gold;
+}
 
+.top2{
+background:linear-gradient(45deg,silver,#ddd);
+}
+
+.top3{
+background:linear-gradient(45deg,#cd7f32,#e0a96d);
+}
+
+.badge{
+margin-left:10px;
+font-size:18px;
+}
 </style>
+
 </head>
 
 <body>
 
-<h1>🏆 BẢNG XẾP HẠNG</h1>
+<h1>🏆 BẢNG XẾP HẠNG CÙNG NHAU KÉO TIẾN NTĐ</h1>
 
 <div class="container">
 
@@ -95,11 +106,7 @@ Tên
 
 <br><br>
 
-<button class="addBtn" onclick="addPlayer()">➕ Thêm</button>
-<button onclick="saveDrive()">💾 Lưu</button>
-<button onclick="backup()">📥 Backup JSON</button>
-
-<div id="status"></div>
+<button class="addBtn" onclick="addPlayer()">💾 Lưu</button>
 
 </div>
 
@@ -109,85 +116,122 @@ Tên
 
 <script>
 
-const PASSWORD="111111"
-
 const API_URL="https://script.google.com/macros/s/AKfycby6UviLXwOXBUCGFlEhEZVSwK4W7h9zEaVG0o4D4yWIapDv3CF4nMp39KOseqI6jePg3w/exec"
 
 let players=[]
+let loading=false
 
-function loadLocal(){
-
-try{
-players=JSON.parse(localStorage.getItem("players")||"[]")
-}catch{
-players=[]
-}
-
-}
-
-function saveLocal(){
-localStorage.setItem("players",JSON.stringify(players))
-}
+const listEl=document.getElementById("list")
 
 function calcScore(p){
 return p.leaf*1+p.flower*50+p.fruit*500+p.tree*1000+p.book*20+p.map*5
 }
 
 function icons(p){
-
 return "🌿".repeat(p.leaf)
 +"🌸".repeat(p.flower)
 +"🍇".repeat(p.fruit)
 +"🌳".repeat(p.tree)
 +"📖".repeat(p.book)
 +"🗺️".repeat(p.map)
+}
 
+function badge(i){
+if(i==0)return"👑 Quán quân"
+if(i==1)return"🥈 Á quân"
+if(i==2)return"🥉 Top 3"
+return"💪"
 }
 
 function findPlayer(name){
 return players.find(p=>p.name.toLowerCase()==name.toLowerCase())
 }
 
-function addPlayer(){
+async function loadDrive(){
 
-let name=document.getElementById("name").value.trim()
+if(loading)return
 
-if(!name){
-alert("Nhập tên")
-return
+loading=true
+
+try{
+
+const res=await fetch(API_URL)
+const data=await res.json()
+
+if(Array.isArray(data)&&data.length>0){
+
+players=data
+
+render()
+
 }
 
-let data={
-leaf:+leaf.value||0,
-flower:+flower.value||0,
-fruit:+fruit.value||0,
-tree:+tree.value||0,
-book:+book.value||0,
-map:+map.value||0
+}catch(e){
+
+console.log("Drive load lỗi")
+
+}
+
+loading=false
+
+}
+
+async function saveDrive(){
+
+try{
+
+await fetch(API_URL,{
+method:"POST",
+body:JSON.stringify(players)
+})
+
+}catch(e){
+
+console.log("Save lỗi")
+
+}
+
+}
+
+function addPlayer(){
+
+const name=document.getElementById("name").value.trim()
+
+if(!name)return
+
+const newData={
+leaf:+leaf.value,
+flower:+flower.value,
+fruit:+fruit.value,
+tree:+tree.value,
+book:+book.value,
+map:+map.value
 }
 
 let p=findPlayer(name)
 
 if(p){
 
-p.leaf+=data.leaf
-p.flower+=data.flower
-p.fruit+=data.fruit
-p.tree+=data.tree
-p.book+=data.book
-p.map+=data.map
+p.leaf+=newData.leaf
+p.flower+=newData.flower
+p.fruit+=newData.fruit
+p.tree+=newData.tree
+p.book+=newData.book
+p.map+=newData.map
 
 }else{
 
-p={name,...data}
+p={name,...newData}
+
 players.push(p)
 
 }
 
 p.score=calcScore(p)
 
-saveLocal()
 render()
+
+saveDrive()
 
 }
 
@@ -195,39 +239,49 @@ function editPlayer(i){
 
 let p=players[i]
 
-p.leaf=+prompt("🌿",p.leaf)
-p.flower=+prompt("🌸",p.flower)
-p.fruit=+prompt("🍇",p.fruit)
-p.tree=+prompt("🌳",p.tree)
-p.book=+prompt("📖",p.book)
-p.map=+prompt("🗺️",p.map)
+let v1=prompt("🌿",p.leaf)
+let v2=prompt("🌸",p.flower)
+let v3=prompt("🍇",p.fruit)
+let v4=prompt("🌳",p.tree)
+let v5=prompt("📖",p.book)
+let v6=prompt("🗺️",p.map)
+
+if(v1!==null)p.leaf=+v1
+if(v2!==null)p.flower=+v2
+if(v3!==null)p.fruit=+v3
+if(v4!==null)p.tree=+v4
+if(v5!==null)p.book=+v5
+if(v6!==null)p.map=+v6
 
 p.score=calcScore(p)
 
-saveLocal()
 render()
+
+saveDrive()
 
 }
 
 function deletePlayer(i){
 
-let pass=prompt("Nhập mật khẩu xoá")
+let pass=prompt("Nhập password xoá")
 
-if(pass!==PASSWORD){
-alert("Sai mật khẩu")
+if(pass!="111111"){
+
+alert("Sai password")
+
 return
+
 }
 
 players.splice(i,1)
 
-saveLocal()
 render()
+
+saveDrive()
 
 }
 
 function render(){
-
-players.forEach(p=>p.score=calcScore(p))
 
 players.sort((a,b)=>b.score-a.score)
 
@@ -238,93 +292,44 @@ players.forEach((p,i)=>{
 let cls=i==0?"top1":i==1?"top2":i==2?"top3":""
 
 html+=`
+
 <div class="player ${cls}">
+
 <div class="rank">#${i+1}</div>
-<div class="name">${p.name}</div>
+
+<div class="name">
+
+${p.name}
+
+<span class="badge">${badge(i)}</span>
+
+</div>
+
 <div class="icons">${icons(p)}</div>
+
 <div class="score">${p.score}</div>
+
 <div class="actions">
+
 <button class="editBtn" onclick="editPlayer(${i})">✏️</button>
+
 <button class="deleteBtn" onclick="deletePlayer(${i})">❌</button>
+
 </div>
+
 </div>
+
 `
 
 })
 
-list.innerHTML=html
+listEl.innerHTML=html
 
 }
 
-async function saveDrive(){
-
-const status=document.getElementById("status")
-
-status.innerHTML="⏳ Đang lưu..."
-
-try{
-
-await fetch(API_URL,{
-method:"POST",
-body:JSON.stringify(players)
-})
-
-status.innerHTML="✅ Đã lưu Google Drive"
-
-await loadDrive()
-
-}catch{
-
-status.innerHTML="❌ Lỗi lưu"
-
-}
-
-}
-
-async function loadDrive(){
-
-try{
-
-let r=await fetch(API_URL)
-
-let data=await r.json()
-
-if(Array.isArray(data)){
-
-players=data
-
-saveLocal()
-
-render()
-
-}
-
-}catch{}
-
-}
-
-function backup(){
-
-let blob=new Blob(
-[JSON.stringify(players,null,2)],
-{type:"application/json"}
-)
-
-let a=document.createElement("a")
-
-a.href=URL.createObjectURL(blob)
-
-a.download="ranking-backup.json"
-
-a.click()
-
-}
-
-setInterval(loadDrive,10000)
-
-loadLocal()
-render()
 loadDrive()
+
+setInterval(loadDrive,5000)
 
 </script>
 
