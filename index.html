@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Leaderboard NTĐ Pro</title>
+<title>Bảng Xếp Hạng NTĐ</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -11,13 +11,13 @@
 
 body{
 margin:0;
-font-family:'Segoe UI',sans-serif;
+font-family:Segoe UI;
 background:linear-gradient(135deg,#a8edea,#fed6e3);
 }
 
 h1{
 text-align:center;
-font-size:40px;
+font-size:42px;
 color:#ff2e63;
 margin:20px;
 }
@@ -31,18 +31,19 @@ padding:20px;
 .card{
 background:white;
 padding:20px;
-border-radius:20px;
-box-shadow:0 10px 25px rgba(0,0,0,0.15);
+border-radius:18px;
+box-shadow:0 8px 20px rgba(0,0,0,0.15);
 margin-bottom:20px;
 }
 
 /* input */
 
 input{
-width:60px;
+width:65px;
 padding:6px;
 border-radius:8px;
 border:1px solid #ddd;
+margin:3px;
 }
 
 button{
@@ -57,7 +58,7 @@ font-weight:bold;
 .editBtn{background:#f39c12;color:white}
 .deleteBtn{background:#e74c3c;color:white}
 
-/* podium 3D */
+/* podium */
 
 .podium{
 display:flex;
@@ -69,11 +70,11 @@ margin-bottom:30px;
 
 .podiumBox{
 text-align:center;
-color:white;
-font-weight:bold;
 padding:15px;
 border-radius:15px;
-box-shadow:0 15px 25px rgba(0,0,0,0.3);
+color:white;
+font-weight:bold;
+box-shadow:0 10px 25px rgba(0,0,0,0.25);
 transform:perspective(500px) rotateX(10deg);
 }
 
@@ -96,7 +97,7 @@ height:110px;
 width:110px;
 }
 
-/* list */
+/* leaderboard */
 
 .player{
 display:flex;
@@ -131,8 +132,7 @@ z-index:999;
 .modalContent{
 background:white;
 padding:25px;
-border-radius:20px;
-width:320px;
+border-radius:18px;
 text-align:center;
 }
 
@@ -141,9 +141,27 @@ width:70px;
 margin:5px;
 }
 
-.closeBtn{
-background:#ccc;
-margin-top:10px;
+/* loading popup */
+
+#loadingBox{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+display:none;
+align-items:center;
+justify-content:center;
+z-index:9999;
+}
+
+.loadingContent{
+background:white;
+padding:40px;
+border-radius:20px;
+text-align:center;
+font-size:22px;
 }
 
 canvas{
@@ -155,7 +173,7 @@ max-height:350px;
 
 <body>
 
-<h1>🏆 Leaderboard NTĐ</h1>
+<h1>🏆 Bảng Xếp Hạng NTĐ</h1>
 
 <div class="container">
 
@@ -183,7 +201,7 @@ Tên
 
 <div class="card">
 <h3>📊 Biểu đồ điểm</h3>
-<canvas id="scoreChart"></canvas>
+<canvas id="chart"></canvas>
 </div>
 
 </div>
@@ -195,31 +213,43 @@ Tên
 
 <h3>✏️ Sửa dữ liệu</h3>
 
-🌿 <input type="number" id="e_leaf"><br>
-🌸 <input type="number" id="e_flower"><br>
-🍇 <input type="number" id="e_fruit"><br>
-🌳 <input type="number" id="e_tree"><br>
-📖 <input type="number" id="e_book"><br>
-🗺️ <input type="number" id="e_map"><br>
+🌿 <input id="e_leaf" type="number"><br>
+🌸 <input id="e_flower" type="number"><br>
+🍇 <input id="e_fruit" type="number"><br>
+🌳 <input id="e_tree" type="number"><br>
+📖 <input id="e_book" type="number"><br>
+🗺️ <input id="e_map" type="number"><br>
 
 <br>
 
-<button onclick="saveEdit()" class="addBtn">💾 Lưu</button>
-<button onclick="closeEdit()" class="closeBtn">Đóng</button>
+<button class="addBtn" onclick="saveEdit()">💾 Lưu</button>
+<button onclick="closeEdit()">Đóng</button>
+
+</div>
+</div>
+
+<!-- LOADING -->
+
+<div id="loadingBox">
+<div class="loadingContent">
+
+💾 Đang lưu dữ liệu lên Drive...
+
+<br><br>
+
+⏳ <span id="timer">10</span>s
 
 </div>
 </div>
 
 <script>
 
-const API_URL="https://script.google.com/macros/s/AKfycby6UviLXwOXBUCGFlEhEZVSwK4W7h9zEaVG0o4D4yWIapDv3CF4nMp39KOseqI6jePg3w/exec"
+const API_URL="PUT_YOUR_SCRIPT_URL_HERE"
 
 let players=[]
 let scoreChart=null
 let editIndex=null
 let lastTop1=null
-
-const listEl=document.getElementById("list")
 
 function calcScore(p){
 return p.leaf*1+p.flower*50+p.fruit*500+p.tree*1000+p.book*20+p.map*5
@@ -232,6 +262,37 @@ return "🌿".repeat(p.leaf)+"🌸".repeat(p.flower)+"🍇".repeat(p.fruit)+"�
 function findPlayer(name){
 return players.find(p=>p.name.toLowerCase()==name.toLowerCase())
 }
+
+/* loading */
+
+function showLoading(){
+
+let box=document.getElementById("loadingBox")
+let timer=document.getElementById("timer")
+
+box.style.display="flex"
+
+let t=10
+timer.innerText=t
+
+let interval=setInterval(()=>{
+
+t--
+timer.innerText=t
+
+if(t<=0) clearInterval(interval)
+
+},1000)
+
+}
+
+function hideLoading(){
+
+document.getElementById("loadingBox").style.display="none"
+
+}
+
+/* drive */
 
 async function loadDrive(){
 
@@ -257,6 +318,8 @@ body:JSON.stringify(players)
 })
 
 }
+
+/* player */
 
 function addPlayer(){
 
@@ -321,7 +384,7 @@ editModal.style.display="none"
 
 }
 
-function saveEdit(){
+async function saveEdit(){
 
 let p=players[editIndex]
 
@@ -337,7 +400,17 @@ p.score=calcScore(p)
 closeEdit()
 
 render()
-saveDrive()
+
+showLoading()
+
+await saveDrive()
+
+setTimeout(async()=>{
+
+await loadDrive()
+hideLoading()
+
+},10000)
 
 }
 
@@ -354,6 +427,8 @@ saveDrive()
 
 }
 
+/* render */
+
 function render(){
 
 players.sort((a,b)=>b.score-a.score)
@@ -361,8 +436,8 @@ players.sort((a,b)=>b.score-a.score)
 if(lastTop1 && players[0] && players[0].name!=lastTop1){
 
 confetti({
-particleCount:150,
-spread:100
+particleCount:200,
+spread:120
 })
 
 }
@@ -423,13 +498,13 @@ html+=`
 
 })
 
-listEl.innerHTML=html
+document.getElementById("list").innerHTML=html
 
 }
 
 function drawChart(){
 
-let ctx=document.getElementById("scoreChart")
+let ctx=document.getElementById("chart")
 
 let labels=players.map(p=>p.name)
 let scores=players.map(p=>p.score)
@@ -440,15 +515,9 @@ scoreChart=new Chart(ctx,{
 type:'bar',
 data:{
 labels:labels,
-datasets:[{
-label:'Điểm',
-data:scores
-}]
+datasets:[{data:scores}]
 },
-options:{
-responsive:true,
-plugins:{legend:{display:false}}
-}
+options:{plugins:{legend:{display:false}}}
 })
 
 }
