@@ -114,7 +114,7 @@ animation:bounce 0.6s ease;
 <h1>🏆 BẢNG XẾP HẠNG CÙNG NHAU KÉO TIẾN NTĐ</h1>
 
 <audio autoplay loop>
-<source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3" type="audio/mpeg">
+<source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3">
 </audio>
 
 <div class="sticker" style="left:10%">🎉</div>
@@ -140,7 +140,7 @@ Tên:
 
 <br><br>
 
-<button class="addBtn" onclick="addPlayer()">➕ Thêm / Cộng dồn</button>
+<button class="addBtn" id="addBtn">➕ Thêm / Cộng dồn</button>
 
 </div>
 
@@ -154,12 +154,32 @@ const PASSWORD="111111"
 
 const listEl=document.getElementById("list")
 
-let players=JSON.parse(localStorage.getItem("players")||"[]")
+const nameInput=document.getElementById("name")
+const leafInput=document.getElementById("leaf")
+const flowerInput=document.getElementById("flower")
+const fruitInput=document.getElementById("fruit")
+const treeInput=document.getElementById("tree")
+const bookInput=document.getElementById("book")
+const mapInput=document.getElementById("map")
 
-let lastTop1=players.length?players[0].name:null
+let players=[]
+let lastTop1=null
+
+try{
+players=JSON.parse(localStorage.getItem("players")||"[]")
+}catch(e){
+players=[]
+}
+
+if(players.length) lastTop1=players[0].name
 
 function save(){
 localStorage.setItem("players",JSON.stringify(players))
+}
+
+function num(v){
+v=parseInt(v)
+return isNaN(v)||v<0?0:v
 }
 
 function calcScore(p){
@@ -167,19 +187,26 @@ return p.leaf*1+p.flower*50+p.fruit*500+p.tree*1000+p.book*20+p.map*5
 }
 
 function icons(p){
-return "🌿".repeat(p.leaf)+
-"🌸".repeat(p.flower)+
-"🍇".repeat(p.fruit)+
-"🌳".repeat(p.tree)+
-"📖".repeat(p.book)+
-"🗺️".repeat(p.map)
+
+function limit(icon,count){
+count=Math.min(count,20)
+return icon.repeat(count)
+}
+
+return limit("🌿",p.leaf)+
+limit("🌸",p.flower)+
+limit("🍇",p.fruit)+
+limit("🌳",p.tree)+
+limit("📖",p.book)+
+limit("🗺️",p.map)
+
 }
 
 function badge(i){
 
-if(i==0) return "👑 Quán quân"
-if(i==1) return "🥈 Á quân"
-if(i==2) return "🥉 Top 3"
+if(i===0) return "👑 Quán quân"
+if(i===1) return "🥈 Á quân"
+if(i===2) return "🥉 Top 3"
 
 return "💪 Cố gắng"
 
@@ -195,44 +222,51 @@ p=>p.name.toLowerCase()===name.toLowerCase()
 
 function addPlayer(){
 
-const name=document.getElementById("name").value.trim()
+const name=nameInput.value.trim()
 
-if(!name) return
-
-const newData={
-leaf:+leaf.value,
-flower:+flower.value,
-fruit:+fruit.value,
-tree:+tree.value,
-book:+book.value,
-map:+map.value
+if(!name){
+alert("Nhập tên")
+return
 }
 
-let existing=findPlayer(name)
+const data={
+leaf:num(leafInput.value),
+flower:num(flowerInput.value),
+fruit:num(fruitInput.value),
+tree:num(treeInput.value),
+book:num(bookInput.value),
+map:num(mapInput.value)
+}
 
-if(existing){
+let p=findPlayer(name)
 
-existing.leaf+=newData.leaf
-existing.flower+=newData.flower
-existing.fruit+=newData.fruit
-existing.tree+=newData.tree
-existing.book+=newData.book
-existing.map+=newData.map
+if(p){
 
-existing.score=calcScore(existing)
+p.leaf+=data.leaf
+p.flower+=data.flower
+p.fruit+=data.fruit
+p.tree+=data.tree
+p.book+=data.book
+p.map+=data.map
 
 }else{
 
-let p={name,...newData}
-
-p.score=calcScore(p)
-
+p={name,...data}
 players.push(p)
 
 }
 
+p.score=calcScore(p)
+
 save()
 render()
+
+leafInput.value=0
+flowerInput.value=0
+fruitInput.value=0
+treeInput.value=0
+bookInput.value=0
+mapInput.value=0
 
 }
 
@@ -247,12 +281,12 @@ let v4=prompt("🌳",p.tree)
 let v5=prompt("📖",p.book)
 let v6=prompt("🗺️",p.map)
 
-if(v1!==null)p.leaf=+v1
-if(v2!==null)p.flower=+v2
-if(v3!==null)p.fruit=+v3
-if(v4!==null)p.tree=+v4
-if(v5!==null)p.book=+v5
-if(v6!==null)p.map=+v6
+if(v1!==null)p.leaf=num(v1)
+if(v2!==null)p.flower=num(v2)
+if(v3!==null)p.fruit=num(v3)
+if(v4!==null)p.tree=num(v4)
+if(v5!==null)p.book=num(v5)
+if(v6!==null)p.map=num(v6)
 
 p.score=calcScore(p)
 
@@ -266,14 +300,13 @@ function deletePlayer(i){
 let pass=prompt("Nhập mật khẩu để xoá")
 
 if(pass!==PASSWORD){
-alert("Sai mật khẩu!")
+alert("Sai mật khẩu")
 return
 }
 
 if(confirm("Xoá người chơi này?")){
 
 players.splice(i,1)
-
 save()
 render()
 
@@ -283,14 +316,15 @@ render()
 
 function render(){
 
+players.forEach(p=>p.score=calcScore(p))
+
 players.sort((a,b)=>b.score-a.score)
 
 let html=""
 
 players.forEach((p,i)=>{
 
-let cls=i==0?"top1":i==1?"top2":i==2?"top3":""
-
+let cls=i===0?"top1":i===1?"top2":i===2?"top3":""
 let anim=(i===0 && p.name!==lastTop1)?"animateTop1":""
 
 html+=`
@@ -318,9 +352,11 @@ ${p.name}
 
 listEl.innerHTML=html
 
-lastTop1=players.length?players[0].name:null
+if(players.length) lastTop1=players[0].name
 
 }
+
+document.getElementById("addBtn").onclick=addPlayer
 
 render()
 
